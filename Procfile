@@ -1,1 +1,1 @@
-web: kittybot.py
+web: kitty.py
