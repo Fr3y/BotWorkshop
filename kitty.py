@@ -1,68 +1,82 @@
+#!/usr/bin/env python
+# pylint: disable=C0116,W0613
+# This program is dedicated to the public domain under the CC0 license.
 
-# KittyUWU will send you kitty 
+"""
+Simple Bot to reply to Telegram messages.
+First, a few handler functions are defined. Then, those functions are passed to
+the Dispatcher and registered at their respective places.
+Then, the bot is started and runs until we press Ctrl-C on the command line.
+Usage:
+Basic Echobot example, repeats messages.
+Press Ctrl-C on the command line or send a signal to the process to stop the
+bot.
+"""
 
 import logging
-import os
 
-import requests
-from dotenv import load_dotenv
-from telegram import ReplyKeyboardMarkup
-from telegram.ext import CommandHandler, Updater
+from telegram import Update, ForceReply
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-load_dotenv()
-
-TOKEN = os.getenv('1906141557:AAEFedJ0i6AgZhV4RcHciFpkZ-HfNdZep8c')
-
+# Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
+
+logger = logging.getLogger(__name__)
 
 
-URL = 'https://api.thecatapi.com/v1/images/search'
-
-
-def get_new_image():
-    try:
-        response = requests.get(URL)
-    except Exception as error:
-      
-        logging.error(f'Error while requesting the main API: {error}')
-        new_url = 'https://api.thedogapi.com/v1/images/search'
-        response = requests.get(new_url)
-
-    response = response.json()
-    random_cat = response[0].get('url')
-    return random_cat
-
-
-def new_cat(update, context):
-    chat = update.effective_chat
-    context.bot.send_photo(chat.id, get_new_image())
-
-
-def wake_up(update, context):
-    chat = update.effective_chat
-    name = update.message.chat.first_name
-    button = ReplyKeyboardMarkup([['/newcat']], resize_keyboard=True)
-
-    context.bot.send_message(
-        chat_id=chat.id,
-        text='Hey, {}. Look what kind of cat I found for you'.format(name),
-        reply_markup=button
+# Define a few command handlers. These usually take the two arguments update and
+# context.
+def start(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /start is issued."""
+    user = update.effective_user
+    update.message.reply_markdown_v2(
+        fr'Hi {user.mention_markdown_v2()}\!',
+        reply_markup=ForceReply(selective=True),
     )
 
-    context.bot.send_photo(chat.id, get_new_image())
+
+def help_command(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /help is issued."""
+    update.message.reply_text('Help!')
 
 
-def main():
-    updater = Updater(token=TOKEN)
+def echo(update: Update, context: CallbackContext) -> None:
+    """Echo the user message."""
+    update.message.reply_text(update.message.text)
 
-    updater.dispatcher.add_handler(CommandHandler('start', wake_up))
-    updater.dispatcher.add_handler(CommandHandler('newcat', new_cat))
 
+def main() -> None:
+    """Start the bot."""
+    # Create the Updater and pass it your bot's token.
+    updater = Updater("
+1906141557:AAEFedJ0i6AgZhV4RcHciFpkZ-HfNdZep8c")
+
+    # Get the dispatcher to register handlers
+    dispatcher = updater.dispatcher
+
+    # on different commands - answer in Telegram
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("help", help_command))
+
+    # on non command i.e message - echo the message on Telegram
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+
+    # Start the Bot
     updater.start_polling()
+
+    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
 
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
