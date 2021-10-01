@@ -1,1 +1,1 @@
-web: kitty.py
+bot: python3 kitty.py
